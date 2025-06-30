@@ -7,8 +7,7 @@ from datetime import datetime, timedelta
 import db_access
 from jose import JWTError, jwt
 import os
-import db_access
-
+from fastapi.middleware.cors import CORSMiddleware
 
 # --- FastAPI App Initialization ---
 app = FastAPI(
@@ -54,6 +53,7 @@ class UserResponse(BaseModel):
 class BookAction(BaseModel):
     book_id: int
     metro_id: int
+
 class BookLoanRequest(BaseModel):
     mobile_no: str
     book_id: int
@@ -63,7 +63,7 @@ class BookReturnRequest(BaseModel):
     mobile_no: str
     book_id: int
     metro_id: int
-    
+
 # --- JWT Utils ---
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
@@ -88,7 +88,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
 
 # --- CORS ---
-from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -119,13 +118,10 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     access_token = create_access_token(data={"user_id": user_data["user_id"], "mobile_no": user_data["mobile_no"]})
     return {"access_token": access_token, "token_type": "bearer"}
 
-
 @app.get("/check_file")
 def check_file():
     return {"file": __file__}
 # Add this temporarily to main.py
-
-
 
 @app.post("/loan_book")
 async def loan_book(request: BookLoanRequest):
@@ -154,7 +150,6 @@ async def loan_book(request: BookLoanRequest):
     return {
         "message": f"Book {request.book_id} successfully loaned by user {user['user_id']} from metro {request.metro_id}"
     }
-
 
 # @app.post("/return_book")
 # async def return_book(action: BookAction, current_user: TokenData = Depends(get_current_user)):
@@ -200,3 +195,18 @@ async def return_book(request: BookReturnRequest):
     return {
         "message": f"Book {request.book_id} returned by user {user['user_id']} to metro {request.metro_id}"
     }
+
+# --- NEW ENDPOINT: User active loans ---
+@app.get("/user_loans/{mobile_no}")
+async def get_user_loans(mobile_no: str):
+    # 1. Get user ID from mobile number
+    user = db_access.get_user_by_mobile_db(mobile_no)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user_id = user["user_id"]
+
+    # 2. Fetch active book loans (not yet returned)
+    loans = db_access.get_active_loans_by_user(user_id)
+
+    return {"loans": loans}
+

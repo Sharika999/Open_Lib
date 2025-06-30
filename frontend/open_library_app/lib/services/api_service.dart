@@ -23,11 +23,12 @@ class ApiService {
   }
 
   // --- Existing registerUser (no changes needed for now) ---
-  Future<User> registerUser(
-      String mobileNo, String name, String password, String? email) async {
+  Future<User> registerUser(String mobileNo, String name, String password,
+      String? email) async {
     final response = await http.post(
       Uri.parse('$API_BASE_URL/register'),
-      headers: await _getHeaders(), // Use new _getHeaders for registration too (though not protected)
+      headers: await _getHeaders(),
+      // Use new _getHeaders for registration too (though not protected)
       body: json.encode({
         'mobile_no': mobileNo,
         'name': name,
@@ -48,7 +49,8 @@ class ApiService {
     } else {
       final errorBody = json.decode(response.body);
       throw Exception(
-          'Failed to register user: ${response.statusCode} - ${errorBody['detail'] ?? response.body}');
+          'Failed to register user: ${response
+              .statusCode} - ${errorBody['detail'] ?? response.body}');
     }
   }
 
@@ -59,7 +61,8 @@ class ApiService {
       Uri.parse('$API_BASE_URL/token'), // The /token endpoint in FastAPI
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
       body: {
-        'username': mobileNo, // FastAPI's OAuth2PasswordRequestForm uses 'username'
+        'username': mobileNo,
+        // FastAPI's OAuth2PasswordRequestForm uses 'username'
         'password': password,
       },
     );
@@ -75,15 +78,18 @@ class ApiService {
       // In a real app, you might have a /me endpoint or the token contains user_id.
       // For now, just return a dummy User based on mobileNo for the UI to display.
       return User(
-        userId: 0, // Placeholder, you'd get this from the token or another endpoint
+        userId: 0,
+        // Placeholder, you'd get this from the token or another endpoint
         mobileNo: mobileNo,
-        userName: mobileNo, // Placeholder, you'd get this from user data
+        userName: mobileNo,
+        // Placeholder, you'd get this from user data
         email: null,
       );
     } else {
       final errorBody = json.decode(response.body);
       throw Exception(
-          'Failed to login: ${response.statusCode} - ${errorBody['detail'] ?? response.body}');
+          'Failed to login: ${response.statusCode} - ${errorBody['detail'] ??
+              response.body}');
     }
   }
 
@@ -93,25 +99,48 @@ class ApiService {
     print('User logged out, token removed.');
   }
 
-  // --- Existing performBookAction (modified to use _getHeaders) ---
-  Future<Map<String, dynamic>> performBookAction(
-      String mobileNo, int bookId, int metroId, String actionType) async {
+  Future<List<Map<String, dynamic>>> fetchUserLoans(String mobileNo) async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$API_BASE_URL/user_loans/$mobileNo'),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> decoded = json.decode(response.body);
+      final List<dynamic> rawList = decoded['loans'];
+      return rawList.map((item) => Map<String, dynamic>.from(item)).toList();
+    } else {
+      throw Exception('Failed to fetch user loans');
+    }
+  }
+
+
+  Future<Map<String, dynamic>> performBookAction(String mobileNo, int bookId,
+      int metroId, String actionType) async {
     final endpoint = actionType == 'loan' ? '/loan_book' : '/return_book';
+
     final response = await http.post(
       Uri.parse('$API_BASE_URL$endpoint'),
-      headers: await _getHeaders(), // Includes Authorization
+      headers: await _getHeaders(),
       body: json.encode({
-        'mobile_no': mobileNo, // ✅ Correct field now
+        'mobile_no': mobileNo,
         'book_id': bookId,
         'metro_id': metroId,
       }),
     );
 
     if (response.statusCode == 200) {
-      return json.decode(response.body);
+      final Map<String, dynamic> responseBody =
+      json.decode(response.body) as Map<String, dynamic>;
+      return responseBody;
     } else {
-      final errorBody = json.decode(response.body);
+      final Map<String, dynamic> errorBody =
+      json.decode(response.body) as Map<String, dynamic>;
       throw Exception(
-          'Failed to ${actionType} book: ${response.statusCode} - ${errorBody['detail'] ?? response.body}');
+        'Failed to $actionType book: ${response
+            .statusCode} - ${errorBody['detail'] ?? response.body}',
+      );
     }
-  }}
+  }
+}
