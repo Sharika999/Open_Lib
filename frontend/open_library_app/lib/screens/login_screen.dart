@@ -1,8 +1,8 @@
-// lib/screens/login_screen.dart
 import 'package:flutter/material.dart';
 import 'package:open_library_app/services/api_service.dart';
-import 'package:open_library_app/screens/home_screen.dart'; // Navigate to home if successful
-import 'package:open_library_app/screens/register_user_screen.dart'; // Navigate to register screen
+import 'package:open_library_app/screens/home_screen.dart';
+import 'package:open_library_app/screens/register_user_screen.dart';
+import 'package:open_library_app/models/user.dart'; // Add this import
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,31 +25,36 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final user = await _apiService.loginUser(
+      final User user = await _apiService.loginUser(
         _mobileNoController.text,
         _passwordController.text,
       );
+
       setState(() {
         _message = 'Login successful for ${user.mobileNo}!';
         _mobileNoController.clear();
         _passwordController.clear();
       });
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Welcome, ${user.mobileNo}!')),
       );
 
-      // Navigate to Home or a protected screen after successful login
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()), // Replace current route
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(user: user), // Pass user to home
+        ),
       );
-
     } catch (e) {
       setState(() {
         _message = 'Login failed: ${e.toString()}';
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login Failed: ${e.toString()}'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Login Failed: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       setState(() {
@@ -74,10 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
             const Text(
               'Welcome to OpenLibrary!',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 30),
             TextField(
@@ -103,20 +105,19 @@ class _LoginScreenState extends State<LoginScreen> {
             _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : ElevatedButton.icon(
-                    onPressed: _login,
-                    icon: const Icon(Icons.login),
-                    label: const Text('Login', style: TextStyle(fontSize: 18)),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
+              onPressed: _login,
+              icon: const Icon(Icons.login),
+              label: const Text('Login', style: TextStyle(fontSize: 18)),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
             const SizedBox(height: 20),
             TextButton(
               onPressed: () {
-                // Navigate to registration screen
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const RegisterUserScreen()),

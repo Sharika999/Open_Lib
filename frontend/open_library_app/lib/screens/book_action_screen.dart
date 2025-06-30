@@ -23,7 +23,7 @@ class _BookActionScreenState extends State<BookActionScreen> {
       _message = '${actionType}ing book...';
     });
 
-    final userId = int.tryParse(_userIdController.text);
+    final userId = _userIdController.text;
     final bookId = int.tryParse(_bookIdController.text);
     final metroId = int.tryParse(_metroIdController.text);
 

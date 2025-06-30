@@ -95,15 +95,13 @@ class ApiService {
 
   // --- Existing performBookAction (modified to use _getHeaders) ---
   Future<Map<String, dynamic>> performBookAction(
-      int userId, int bookId, int metroId, String actionType) async {
-    // NOTE: userId here is still taken from the UI, but it should come from the authenticated user.
-    // We'll fix this properly in the next step (after implementing state management for current user).
+      String mobileNo, int bookId, int metroId, String actionType) async {
     final endpoint = actionType == 'loan' ? '/loan_book' : '/return_book';
     final response = await http.post(
       Uri.parse('$API_BASE_URL$endpoint'),
-      headers: await _getHeaders(), // Now includes Authorization header
+      headers: await _getHeaders(), // Includes Authorization
       body: json.encode({
-        'user_id': userId, // This user_id is ignored by backend if auth is correct.
+        'mobile_no': mobileNo, // ✅ Correct field now
         'book_id': bookId,
         'metro_id': metroId,
       }),
@@ -116,5 +114,4 @@ class ApiService {
       throw Exception(
           'Failed to ${actionType} book: ${response.statusCode} - ${errorBody['detail'] ?? response.body}');
     }
-  }
-}
+  }}

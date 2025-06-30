@@ -1,8 +1,7 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
-import 'package:open_library_app/screens/home_screen.dart';
-import 'package:open_library_app/screens/login_screen.dart'; // New import for LoginScreen
-import 'package:open_library_app/services/api_service.dart'; // New import for ApiService
+import 'package:open_library_app/screens/login_screen.dart';
+import 'package:open_library_app/services/api_service.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,26 +16,23 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final ApiService _apiService = ApiService();
-  bool _isLoggedIn = false;
-  bool _isLoading = true; // Added loading state for initial check
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _checkLoginStatus(); // Check login status when the app starts
+    _checkLoginStatus();
   }
 
   Future<void> _checkLoginStatus() async {
-    final token = await _apiService.getAuthToken();
+    await _apiService.getAuthToken(); // You can optionally check the token validity here
     setState(() {
-      _isLoggedIn = token != null; // User is logged in if a token exists
-      _isLoading = false; // Finished loading
+      _isLoading = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // Theme settings are kept from previous main.dart
     return MaterialApp(
       title: 'OpenLibrary App',
       theme: ThemeData(
@@ -65,12 +61,10 @@ class _MyAppState extends State<MyApp> {
           contentPadding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 10.0),
         ),
       ),
-      // Decide which screen to show based on login status and loading state
+      // Always show LoginScreen initially, it will navigate to HomeScreen after login
       home: _isLoading
-          ? const Scaffold(body: Center(child: CircularProgressIndicator())) // Show loading while checking status
-          : _isLoggedIn
-              ? const HomeScreen() // If logged in, go to home
-              : const LoginScreen(), // Otherwise, go to login
+          ? const Scaffold(body: Center(child: CircularProgressIndicator()))
+          : const LoginScreen(),
     );
   }
 }
