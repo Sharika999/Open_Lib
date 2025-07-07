@@ -62,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginScreen()),
-                    (route) => false,
+                (route) => false,
               );
             },
           )
@@ -100,69 +100,69 @@ class _HomeScreenState extends State<HomeScreen> {
           isLoading
               ? const Center(child: CircularProgressIndicator())
               : Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: filteredBooks.isEmpty
-                  ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text("📚 No books taken yet", style: TextStyle(fontWeight: FontWeight.bold)),
-                  SizedBox(height: 10),
-                  Text(
-                    "Hyderabad Metro invites you to explore OpenLibrary — grab a book from our station library and enjoy your ride!",
-                    style: TextStyle(fontStyle: FontStyle.italic),
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: filteredBooks.isEmpty
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text("📚 No books taken yet", style: TextStyle(fontWeight: FontWeight.bold)),
+                              SizedBox(height: 10),
+                              Text(
+                                "Hyderabad Metro invites you to explore OpenLibrary — grab a book from our station library and enjoy your ride!",
+                                style: TextStyle(fontStyle: FontStyle.italic),
+                              ),
+                            ],
+                          )
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text("📘 Books currently loaned", style: TextStyle(fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 10),
+                              ...filteredBooks.map((book) {
+                                final time = DateTime.tryParse(book['loan_time'] ?? '');
+                                final formattedTime = time != null
+                                    ? DateFormat('dd MMM yyyy, hh:mm a').format(time)
+                                    : 'Unknown';
+                                return Container(
+                                  margin: const EdgeInsets.symmetric(vertical: 8),
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [Colors.blue.shade50, Colors.white],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(10),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Colors.black12,
+                                        blurRadius: 4,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "📖 ${book['book_title'] ?? 'Untitled'}",
+                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text("📚 Book ID: ${book['book_id']}"),
+                                      Text("🚉 Metro: ${book['metro_name']}"),
+                                      Text("⏰ Loaned at: $formattedTime"),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ],
+                          ),
                   ),
-                ],
-              )
-                  : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text("📘 Books currently loaned", style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 10),
-                  ...filteredBooks.map((book) {
-                    final time = DateTime.tryParse(book['loan_time'] ?? '');
-                    final formattedTime = time != null
-                        ? DateFormat('dd MMM yyyy, hh:mm a').format(time)
-                        : 'Unknown';
-                    return Container(
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.blue.shade50, Colors.white],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "📖 ${book['book_title'] ?? 'Untitled'}",
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 4),
-                          Text("📚 Book ID: ${book['book_id']}"),
-                          Text("🚉 Metro: ${book['metro_name']}"),
-                          Text("⏰ Loaned at: $formattedTime"),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ],
-              ),
-            ),
-          ),
+                ),
           const SizedBox(height: 30),
           const Text(
             "📌 Don't forget!",
