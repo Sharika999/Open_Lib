@@ -116,7 +116,7 @@ class ApiService {
   }
 
 
-  Future<Map<String, dynamic>> performBookAction(String mobileNo, int bookId,
+  Future<Map<String, dynamic>> performBookAction(int mobileNo, String bookId,
       int metroId, String actionType) async {
     final endpoint = actionType == 'loan' ? '/loan_book' : '/return_book';
 
@@ -141,6 +141,16 @@ class ApiService {
         'Failed to $actionType book: ${response
             .statusCode} - ${errorBody['detail'] ?? response.body}',
       );
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchMetroStations() async {
+    final response = await http.get(Uri.parse('$API_BASE_URL/metro_stations'));
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Failed to load metro stations');
     }
   }
 }

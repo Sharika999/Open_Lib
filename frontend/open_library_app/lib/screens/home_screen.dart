@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:open_library_app/models/book_loan.dart';
 import 'package:open_library_app/models/user.dart';
 import 'package:open_library_app/screens/book_action_screen.dart';
 import 'package:open_library_app/screens/login_screen.dart';
 import 'package:open_library_app/services/api_service.dart';
+import 'package:open_library_app/widgets/book_card.dart';
 
 class HomeScreen extends StatefulWidget {
   final User user;
@@ -15,7 +16,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<dynamic> borrowedBooks = [];
+  List<BookLoan> borrowedBooks = [];
   bool isLoading = true;
   String searchQuery = '';
 
@@ -27,9 +28,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> fetchBorrowedBooks() async {
     try {
-      final loans = await ApiService().fetchUserLoans(widget.user.mobileNo);
+      final jsonList = await ApiService().fetchUserLoans(widget.user.mobileNo);
       setState(() {
-        borrowedBooks = loans;
+        borrowedBooks = jsonList.map((e) => BookLoan.fromJson(e)).toList();
         isLoading = false;
       });
     } catch (e) {
@@ -46,8 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final filteredBooks = borrowedBooks.where((book) {
-      final title = (book['book_title'] ?? '').toString().toLowerCase();
-      return title.contains(searchQuery.toLowerCase());
+      return book.title.toLowerCase().contains(searchQuery.toLowerCase());
     }).toList();
 
     return Scaffold(
@@ -61,8 +61,8 @@ class _HomeScreenState extends State<HomeScreen> {
               await ApiService().logoutUser();
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-                    (route) => false,
+                MaterialPageRoute(builder: (_) => const MainLoginScreen()),
+                    (_) => false,
               );
             },
           )
@@ -90,12 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
           const SizedBox(height: 20),
-          const Center(
-            child: Text(
-              "Hyderabad Metro",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-            ),
-          ),
+          const Center(child: Text("Hyderabad Metro", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400))),
           const SizedBox(height: 20),
           isLoading
               ? const Center(child: CircularProgressIndicator())
@@ -105,9 +100,9 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: filteredBooks.isEmpty
-                  ? Column(
+                  ? const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text("📚 No books taken yet", style: TextStyle(fontWeight: FontWeight.bold)),
                   SizedBox(height: 10),
                   Text(
@@ -121,54 +116,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   const Text("📘 Books currently loaned", style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
-                  ...filteredBooks.map((book) {
-                    final time = DateTime.tryParse(book['loan_time'] ?? '');
-                    final formattedTime = time != null
-                        ? DateFormat('dd MMM yyyy, hh:mm a').format(time)
-                        : 'Unknown';
-                    return Container(
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.blue.shade50, Colors.white],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "📖 ${book['book_title'] ?? 'Untitled'}",
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 4),
-                          Text("📚 Book ID: ${book['book_id']}"),
-                          Text("🚉 Metro: ${book['metro_name']}"),
-                          Text("⏰ Loaned at: $formattedTime"),
-                        ],
-                      ),
-                    );
-                  }).toList(),
+                  ...filteredBooks.map((book) => BookCard(book: book)).toList(),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 30),
-          const Text(
-            "📌 Don't forget!",
-            textAlign: TextAlign.center,
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
+          const Text("📌 Don't forget!", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           const Text(
             "Please return books within the due time to help fellow passengers enjoy the reading experience.",
@@ -193,7 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () async {
                   await Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const BookActionScreen(initialTab: 1)),
+                    MaterialPageRoute(builder: (_) => const BookActionScreen(initialTab: 1)),
                   );
                   fetchBorrowedBooks();
                 },
@@ -204,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () async {
                   await Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const BookActionScreen(initialTab: 0)),
+                    MaterialPageRoute(builder: (_) => const BookActionScreen(initialTab: 0)),
                   );
                   fetchBorrowedBooks();
                 },

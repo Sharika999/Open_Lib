@@ -1,6 +1,7 @@
 // lib/screens/book_action_screen.dart
 import 'package:flutter/material.dart';
 import 'package:open_library_app/services/api_service.dart';
+import 'package:open_library_app/models/qr_scanner_page.dart';
 
 class BookActionScreen extends StatefulWidget {
   final int initialTab;
@@ -15,24 +16,42 @@ class _BookActionScreenState extends State<BookActionScreen> with SingleTickerPr
   late TabController _tabController;
   final TextEditingController _mobileNoController = TextEditingController();
   final TextEditingController _bookIdController = TextEditingController();
-  final TextEditingController _metroIdController = TextEditingController();
+  //final TextEditingController _metroIdController = TextEditingController();
   final ApiService _apiService = ApiService();
 
   String _message = '';
   bool _isLoading = false;
+  List<Map<String, dynamic>> _metroStations = [];
+  String? _selectedMetroName;
+  int? _selectedMetroId;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this, initialIndex: widget.initialTab);
+    _loadMetroStations();
   }
+
+  Future<void> _loadMetroStations() async {
+    try {
+      final metros = await _apiService.fetchMetroStations();
+      setState(() {
+        _metroStations = metros;
+      });
+    } catch (e) {
+      print("Failed to fetch metro stations: $e");
+    }
+  }
+
+
+
 
   @override
   void dispose() {
     _tabController.dispose();
     _mobileNoController.dispose();
     _bookIdController.dispose();
-    _metroIdController.dispose();
+    //_metroIdController.dispose();
     super.dispose();
   }
 
@@ -42,11 +61,11 @@ class _BookActionScreenState extends State<BookActionScreen> with SingleTickerPr
       _message = '${actionType}ing book...';
     });
 
-    final mobileNo = _mobileNoController.text.trim();
-    final bookId = int.tryParse(_bookIdController.text.trim());
-    final metroId = int.tryParse(_metroIdController.text.trim());
+    final mobileNo =  int.tryParse(_mobileNoController.text.trim());
+    final bookId = _bookIdController.text.trim();
+    final metroId = _selectedMetroId;
 
-    if (mobileNo.isEmpty || bookId == null || metroId == null) {
+    if (mobileNo == null || bookId.isEmpty || metroId == null) {
       setState(() {
         _message = 'Please enter valid Mobile No, Book ID, and Metro ID.';
         _isLoading = false;
@@ -67,7 +86,7 @@ class _BookActionScreenState extends State<BookActionScreen> with SingleTickerPr
       setState(() {
         _message = 'Success: ${response['message']}';
         _bookIdController.clear();
-        _metroIdController.clear();
+        //_metroIdController.clear();
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Book ${actionType}ed successfully!')),
@@ -102,24 +121,61 @@ class _BookActionScreenState extends State<BookActionScreen> with SingleTickerPr
             keyboardType: TextInputType.phone,
           ),
           const SizedBox(height: 12),
-          TextField(
-            controller: _bookIdController,
-            decoration: const InputDecoration(
-              labelText: 'Book ID',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.menu_book),
-            ),
-            keyboardType: TextInputType.number,
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _bookIdController,
+                  decoration: const InputDecoration(
+                    labelText: 'Book ID',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.menu_book),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.qr_code_scanner, size: 30),
+                tooltip: 'Scan Book QR',
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => QRScannerPage(
+                        onScanned: (scannedCode) {
+                          setState(() {
+                            _bookIdController.text = scannedCode;
+                          });
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _metroIdController,
+
+          DropdownButtonFormField<String>(
+            value: _selectedMetroName,
             decoration: const InputDecoration(
-              labelText: 'Metro Station ID',
+              labelText: 'Metro Station',
               border: OutlineInputBorder(),
               prefixIcon: Icon(Icons.train),
             ),
-            keyboardType: TextInputType.number,
+            items: _metroStations.map((station) {
+              return DropdownMenuItem<String>(
+                value: station['mtr_name'],
+                child: Text(station['mtr_name']),
+              );
+            }).toList(),
+            onChanged: (value) {
+              final selected = _metroStations.firstWhere((s) => s['mtr_name'] == value);
+              setState(() {
+                _selectedMetroName = value;
+                _selectedMetroId = selected['mtr_id'];
+              });
+            },
           ),
           const SizedBox(height: 24),
           _isLoading
@@ -152,7 +208,7 @@ class _BookActionScreenState extends State<BookActionScreen> with SingleTickerPr
       ),
     );
   }
-
+//Loan/return book page
   @override
   Widget build(BuildContext context) {
     return Scaffold(

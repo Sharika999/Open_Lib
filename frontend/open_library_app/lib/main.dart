@@ -1,9 +1,19 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:open_library_app/screens/login_screen.dart';
-import 'package:open_library_app/services/api_service.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 
-void main() {
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
+  await FirebaseAppCheck.instance.activate(
+      androidProvider: AndroidProvider.playIntegrity,
+      appleProvider: AppleProvider.appAttest
+  );// Uses google-services.json for Android
   runApp(const MyApp());
 }
 
@@ -15,7 +25,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final ApiService _apiService = ApiService();
   bool _isLoading = true;
 
   @override
@@ -25,16 +34,23 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _checkLoginStatus() async {
-    await _apiService.getAuthToken(); // You can optionally check the token validity here
+    final user = FirebaseAuth.instance.currentUser;
     setState(() {
       _isLoading = false;
     });
+
+    // Optionally navigate to home if user is already logged in
+    // Example:
+    // if (user != null) {
+    //   Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomeScreen()));
+    // }
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'OpenLibrary App',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
         appBarTheme: const AppBarTheme(
@@ -58,13 +74,16 @@ class _MyAppState extends State<MyApp> {
             borderRadius: BorderRadius.circular(8),
             borderSide: const BorderSide(color: Colors.blueAccent, width: 2.0),
           ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 10.0),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 15.0,
+            horizontal: 10.0,
+          ),
         ),
       ),
-      // Always show LoginScreen initially, it will navigate to HomeScreen after login
       home: _isLoading
           ? const Scaffold(body: Center(child: CircularProgressIndicator()))
-          : const LoginScreen(),
+          : const MainLoginScreen(),
     );
   }
 }
+
